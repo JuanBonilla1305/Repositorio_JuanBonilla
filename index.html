@@ -817,9 +817,6 @@
     return out;
   }
 
-  // Set initial state
-  pathEl.setAttribute('d', serialize(START));
-
   var startTime = null;
   var DURATION = 2200; // ms total para todo el nombre
   var started = false;
@@ -828,6 +825,8 @@
     if(started) return;
     started = true;
 
+    // Pintar estado inicial (línea) en el primer frame
+    pathEl.setAttribute('d', serialize(START));
     function frame(now){
       if(!startTime) startTime = now;
       var t = Math.min((now - startTime) / DURATION, 1);
@@ -845,14 +844,19 @@
     requestAnimationFrame(frame);
   }
 
-  // Disparar cuando sea visible
-  if('IntersectionObserver' in window){
-    var obs = new IntersectionObserver(function(entries){
-      if(entries[0].isIntersecting){ startAnim(); obs.disconnect(); }
-    }, {threshold:0.3});
-    obs.observe(pathEl);
+  // Esperar a que el layout esté completamente listo
+  function tryStart() {
+    var rect = pathEl.getBoundingClientRect();
+    if (rect.width > 10) {
+      startAnim();
+    } else {
+      setTimeout(tryStart, 50);
+    }
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(tryStart, 100);
   } else {
-    setTimeout(startAnim, 400);
+    window.addEventListener('load', function() { setTimeout(tryStart, 100); });
   }
 })();
 </script>
